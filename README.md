@@ -1,5 +1,5 @@
 # Some graphical user interface components for the ESP32-2432S028R
-While I was experimenting with the CYD, I designed some graphical components for the user interface. So far it's just a universal button a toggle LED and a horizontal slider. The button can display a value and be labelled. The toggle LED shows a selectable colour when switched on and calls a callback every time the status changes.The slider is associated with 2 value fields, one displays an integer value 0..100 and the other a float -30.00..+50.00. The colour appearance can be set by specifying a colour scheme. 
+While I was experimenting with the CYD, I designed some graphical components for the user interface. So far it's just a universal button, a toggle LED and a horizontal slider. The button can display a value and be labelled. The toggle LED shows a selectable colour when switched on and calls a callback every time the status changes.The slider is associated with 2 value fields, one displays an integer value 0..100 and the other a float -30.00..+50.00. The colour appearance can be set by specifying a colour scheme. 
 
 ![img1](images/CYD_Gui.png)
 
@@ -10,7 +10,7 @@ The *SaveScreenshot* button should save the screen content to the SD card. 👉 
 ## Usage
 The code block below shows how the user interface of the example was created.
 ```
-//                Text       Button  Border  Shadow  Font
+//                Text       Body    Border  Shadow  Font
 uiTheme blueTheme(TFT_BLACK, 0x07df, 0x03df, 0x01ca, &fonts::DejaVu12);
 uiTheme defaultTheme;
 
@@ -19,11 +19,14 @@ uiButton btnClear(lcd, 10,10,40,20, "", "Clear");
 uiButton btnOn(lcd, 125,10,50,20,blueTheme, "On");
 uiButton btnOff(lcd, 185,10,50,20,blueTheme, "Off");
 uiButton adc(lcd, 10, 130, 60, 24, "", "LDR value");
-uiButton theTime(lcd, 10, 170, 94, 24);
-uiButton theDate(lcd, 112, 170, 122, 24);
+uiButton theTime(lcd, 10, 164, 94, 24);
+uiButton theDate(lcd, 112, 164, 122, 24);
 uiButton btnReverse(lcd, 50, 250, 60, 24, ">>", "forward");
 uiButton btnScreenshot(lcd, 20, 290, 200, 20, "Save Screenshot");
 uiLED    led1(lcd, 30, 50, 10,  TFT_RED, toggleHeating, blueTheme, "Heating");
 uiLED    led2(lcd, 30, 80, 10,  TFT_YELLOW, toggleFan, blueTheme, "Fan");
 uiLED    led3(lcd, 30, 110, 10, TFT_BLUE, toggleWater, "Water");
+uiHslider slider(lcd, 15, 230, 210, 10, TFT_MAROON, slide);
+uiButton  sliderInt(lcd,10, 194, 94, 24);
+uiButton  sliderFloat(lcd,112, 194, 122, 24);
 ```
