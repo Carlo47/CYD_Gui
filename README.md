@@ -1,5 +1,5 @@
 # Some graphical user interface components for the ESP32-2432S028R
-While I was experimenting with the CYD, I designed some graphical components for the user interface. So far it's just a universal button and a toggle LED. The button can display a value and be labelled. The toggle LED shows a selectable colour when switched on and calls a callback every time the status changes. The colour appearance can be set by specifying a colour scheme. 
+While I was experimenting with the CYD, I designed some graphical components for the user interface. So far it's just a universal button a toggle LED and a horizontal slider. The button can display a value and be labelled. The toggle LED shows a selectable colour when switched on and calls a callback every time the status changes.The slider is associated with 2 value fields, one displays an integer value 0..100 and the other a float -30.00..+50.00. The colour appearance can be set by specifying a colour scheme. 
 
 ![img1](images/CYD_Gui.png)
 

@@ -20,7 +20,7 @@ void calibrateTouch(LGFX &lcd)
         lcd.setTextDatum(textdatum_t::middle_center);
         lcd.setTextSize(1.0);
         lcd.clear();
-        lcd.drawString("touch the arrow marker.", lcd.width()>>1, lcd.height() >> 1);
+        lcd.drawString("touch the arrow marker", lcd.width()>>1, lcd.height() >> 1);
         lcd.setTextDatum(textdatum_t::top_left);
 
         // When using touch, perform calibration. Touch the tips of the arrows 

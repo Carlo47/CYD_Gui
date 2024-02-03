@@ -6,7 +6,7 @@ const char ssid[]     = "Your SSID";
 const char password[] = "Your Key";
 const char NTP_SERVER_POOL[] = "ch.pool.ntp.org";
 const char TIME_ZONE[]       = "MEZ-1MESZ-2,M3.5.0/02:00:00,M10.5.0/03:00:00";
-const char HOST_NAME[] = "ESP32-CYD"; 
+const char HOST_NAME[]       = "ESP32-CYD"; 
 
 /**
  * Use a raw string literal to print a formatted
@@ -50,7 +50,7 @@ void initWiFi()
   }
   Serial.println("Connected");
   log_i("===> done");
-  // 👉The next line prevents the interrupt at GPIO_NUM_36 
+  // 👉 The next line prevents the interrupt at GPIO_NUM_36 
   //   from being triggered continuously. This undesirable 
   //   effect is due to a hardware error in the ESP32 chip.
   //   This workaround can be omitted if interrupt pins 36 

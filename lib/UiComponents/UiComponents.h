@@ -6,18 +6,19 @@
 #define DARKERGREY 0x4208
 
 
-using Callback = void(&)(bool state);
+using Callback = void(&)(int value);
+
 
 class uiTheme
 {
     public:
-        uiTheme(int textColor=TFT_WHITE, int btnColor=DARKERGREY, int borderColor=TFT_SKYBLUE, int shadowColor=TFT_BLACK, 
+        uiTheme(int textColor=TFT_WHITE, int bodyColor=DARKERGREY, int borderColor=TFT_SKYBLUE, int shadowColor=TFT_BLACK, 
              const GFXfont *font = &fonts::DejaVu18) :
-            _textColor(textColor), _btnColor(btnColor), _borderColor(borderColor), _shadowColor(shadowColor), _font(font)
+            _textColor(textColor), _bodyColor(bodyColor), _borderColor(borderColor), _shadowColor(shadowColor), _font(font)
         {}
         
         int _textColor;
-        int _btnColor;
+        int _bodyColor;
         int _borderColor;
         int _shadowColor;
         const GFXfont *_font;       
@@ -84,4 +85,33 @@ class uiLED
         bool _isOn = true;
         Callback _cb;
         String _label = "";    
+};
+
+
+class uiHslider
+{
+    public:
+        uiHslider(LGFX &lcd, int x, int y, int w, int h, int color, Callback cb, uiTheme &theme, String label="") : 
+            _lcd(lcd), _x(x), _y(y), _w(w), _h(h), _color(color), _cb(cb), _theme(theme), _label(label)
+            {}
+
+        uiHslider(LGFX &lcd, int x, int y, int w, int h, int color, Callback cb, String label="") : 
+            _lcd(lcd), _x(x), _y(y), _w(w), _h(h), _color(color), _cb(cb), _label(label)
+            {}
+
+        void draw();
+        void slideTo(int x);
+        bool touched(int x, int y);
+
+        private:
+        LGFX &_lcd;
+        uiTheme &_theme=defaultTheme;
+        int _d = 8;
+        int _r = 4;
+        int _x, _y, _w, _h;
+        int _position = _x+_w/2;
+        int _color;
+        int _value = (_position-_x) * 100 / _w; 
+        Callback _cb;
+        String _label = "";
 };

@@ -69,13 +69,13 @@ public:
     }
     {  // Configure touchscreen control settings. (remove if not needed)
       auto cfg = _touch_instance.config();
-      cfg.x_min = 340;          // minimum X value (raw value) obtained from the touchscreen
-      cfg.x_max = 3860;         // maximum X value from touchscreen (raw value)
-      cfg.y_min = 180;          // smallest Y value (raw value) obtained from the touchscreen
-      cfg.y_max = 3830;         // maximum Y value from touchscreen (raw value)
-      cfg.pin_int = 36;         // pin number where INT is connected, TP IRQ
-      cfg.bus_shared = true;   // set to true if using a common bus with the screen
-      cfg.offset_rotation = 0;  // adjust if display and touch orientation do not match, set to 0~7
+      cfg.x_min = 335;         // minimum X value (raw value) from touchscreen
+      cfg.x_max = 3740;        // maximum X value (raw value) from touchscreen 
+      cfg.y_min = 230;         // minimum Y value (raw value) from touchscreen
+      cfg.y_max = 3797;        // maximum Y value (raw value) from touchscreen 
+      cfg.pin_int = 36;        // pin number where INT is connected, TP IRQ
+      cfg.bus_shared = false;   // set to true if using a common bus with the screen
+      cfg.offset_rotation = 3; // adjust if display and touch orientation do not match, set to 0~7
       // For SPI connection
       cfg.spi_host = VSPI_HOST;  // Select SPI to use (HSPI_HOST or VSPI_HOST)
       cfg.freq = 1000000;        // Set SPI clock

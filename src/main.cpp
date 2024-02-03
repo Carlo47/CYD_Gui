@@ -1,11 +1,12 @@
 /**
  * Program      CYD_Gui with ESP32_2432S028R aka "Cheap Yellow Display (CYD)"
  * 
- * Author       2024-01-31 Charles Geiser
+ * Author       2024-02-03 Charles Geiser
  * 
  * Purpose      Shows how to implement some graphical user interface components
- *                  uiButton with a value field on the button and a label to the right
- *                  uiLed    on/off toggle with callback
+ *                  uiButton  with a value field on the button and a label to the right
+ *                  uiLed     on/off toggle with callback
+ *                  uiHslider a horizontal slider 
  * 
  * Board        ESP32-2432S028 with touchscreen and SD card from AITEXM ROBOT
  *              https://www.aliexpress.com/item/1005005616073472.html?gps-id=pcStoreJustForYou&scm=1007.23125.137358.0&scm_id=1007.23125.137358.0&scm-url=1007.23125.137358.0&pvid=629012e6-491d-40f0-b41b-033335bc0c49&_t=gps-id:pcStoreJustForYou,scm-url:1007.23125.137358.0,pvid:629012e6-491d-40f0-b41b-033335bc0c49,tpp_buckets:668%232846%238114%231999&pdp_npi=4%40dis%21CHF%2110.65%218.62%21%21%2112.03%219.74%21%40210324bf17060488843367930ea758%2112000033759549673%21rec%21CH%21767770434%21&spm=a2g0o.store_pc_home.smartJustForYou_2007716161329.1005005616073472
@@ -33,8 +34,9 @@
 
 using Action = void(&)(LGFX &lcd);
 
+extern void nop(LGFX &lcd);
 extern void calibrateTouch(LGFX &lcd);
-extern void initDisplay(LGFX &lcd, lgfx::v1::GFXfont *theFont, Action greet);
+extern void initDisplay(LGFX &lcd, lgfx::v1::GFXfont *theFont, Action greet=nop);
 extern void initNTP();
 extern void initSDCard(SPIClass &spi);
 extern void initWiFi();
@@ -46,20 +48,21 @@ extern bool saveToSD_16bit(LGFX &lcd, const char *filename, bool swapBytes=true)
 
 // Forward declaration of the button actions
 void reverseDirection();
-void switchLeds(bool);
+void switchLeds(int);
 void takeScreenshot();
 
-// Forward declaration of the callbacks for the uiLed components
-void toggleFan(bool);
-void toggleHeating(bool);
-void toggleWater(bool);
+// Forward declaration of the callbacks for the uiSlider and uiLed components
+void toggleFan(int);
+void toggleHeating(int);
+void toggleWater(int);
+void slide(int);
 
 
 SPIClass sdcardSPI(HSPI);
 LGFX lcd;
 GFXfont myFont = fonts::DejaVu18;
 
-//                Text       Button  Border  Shadow  Font
+//                Text       Body    Border  Shadow  Font
 uiTheme blueTheme(TFT_BLACK, 0x07df, 0x03df, 0x01ca, &fonts::DejaVu12);
 uiTheme defaultTheme;
 
@@ -68,31 +71,42 @@ uiButton btnClear(lcd, 10,10,40,20, "", "Clear");
 uiButton btnOn(lcd, 125,10,50,20,blueTheme, "On");
 uiButton btnOff(lcd, 185,10,50,20,blueTheme, "Off");
 uiButton adc(lcd, 10, 130, 60, 24, "", "LDR value");
-uiButton theTime(lcd, 10, 170, 94, 24);
-uiButton theDate(lcd, 112, 170, 122, 24);
+uiButton theTime(lcd, 10, 164, 94, 24);
+uiButton theDate(lcd, 112, 164, 122, 24);
 uiButton btnReverse(lcd, 50, 250, 60, 24, ">>", "forward");
 uiButton btnScreenshot(lcd, 20, 290, 200, 20, "Save Screenshot");
 uiLED    led1(lcd, 30, 50, 10,  TFT_RED, toggleHeating, blueTheme, "Heating");
 uiLED    led2(lcd, 30, 80, 10,  TFT_YELLOW, toggleFan, blueTheme, "Fan");
 uiLED    led3(lcd, 30, 110, 10, TFT_BLUE, toggleWater, "Water");
+uiHslider slider(lcd, 15, 230, 210, 10, TFT_MAROON, slide);
+uiButton  sliderInt(lcd,10, 194, 94, 24);
+uiButton  sliderFloat(lcd,112, 194, 122, 24);
 
 
-void toggleHeating(bool state)
+void slide(int value)
+{
+    float f = (float)map(value, 0, 100, -30, 50);
+    log_i("Slider slides to: %d", value);
+    sliderInt.updateValue(value);
+    sliderFloat.updateValue(f);
+}
+
+void toggleHeating(int state)
 {
     Serial.printf("Heating is now %s\n", state ? "on" : "off");
 }
 
-void toggleFan(bool state)
+void toggleFan(int state)
 {
     Serial.printf("Fan is now %s\n", state ? "on" : "off");
 }
 
-void toggleWater(bool state)
+void toggleWater(int state)
 {
     Serial.printf("Water is now %s\n", state ? "on" : "off");
 }
 
-void switchLeds(bool state)
+void switchLeds(int state)
 {
     if (state)
     {
@@ -175,7 +189,7 @@ void initUi()
 {
     lcd.setBaseColor(TFT_DARKGREEN);
     lcd.clear();
-    lcd.setBrightness(50);  // Reduce lcd backlight
+    lcd.setBrightness(128);  // Reduce lcd backlight
 
     // Draw UI components
     btnClear.draw();
@@ -188,7 +202,10 @@ void initUi()
     theTime.draw();
     theDate.draw();
     btnReverse.draw();
-    btnScreenshot.draw();   
+    btnScreenshot.draw();
+    sliderInt.draw();
+    sliderFloat.draw();
+    slider.draw();   
 }
 
 
@@ -196,8 +213,7 @@ void setup(void)
 {
     Serial.begin(115200);
 
-    // Photoconductive cell GT36516 on pin CDS = 34 varies
-    // between 5 .. 300 kOhm
+    // Photoconductive cell GT36516 on pin CDS = 34 varies between 5 .. 300 kOhm
     analogSetAttenuation(ADC_0db);  // Set lowest attenuation for CDS
     pinMode(CDS, INPUT);
     
@@ -208,10 +224,10 @@ void setup(void)
     initWiFi();
     printConnectionDetails();
     initNTP();
-    initDisplay(lcd, &myFont, calibrateTouch);  // Init display and calibrate
-    initSDCard(sdcardSPI);          // Init SD card
-    printSDCardInfo();              // Print SD card details 
-    listFiles(SD.open("/"));        // List the files on SD card 
+    initDisplay(lcd, &myFont, nop);  // Init display, to calibrate call initDisplay(lcd, &myFont, calibrateTouch)
+    initSDCard(sdcardSPI);      // Init SD card
+    printSDCardInfo();          // Print SD card details 
+    listFiles(SD.open("/"));    // List the files on SD card 
 
     // Read images from SD card and show them on screen
     lcd.drawBmpFile("/sd/dodeka.bmp", 0,0) ? log_e("file opened") : log_e("file not found");
@@ -241,8 +257,11 @@ void loop()
         if (lcd.touch())
         {
             x = y = 0;
-            lcd.getTouch(&x, &y);
-            if (btnClear.touched(x, y))  { switchLeds(false); adc.clearValue(); theTime.clearValue(); theDate.clearValue(); }
+            lcd.getTouch(&x, &y); 
+            //log_i("x / y = %3d / %3d", x, y);
+            if (btnClear.touched(x, y))  
+                { switchLeds(false);      adc.clearValue(); 
+                  theTime.clearValue();   theDate.clearValue(); }
             if (btnOn.touched(x, y))  { switchLeds(true); }
             if (btnOff.touched(x, y)) { switchLeds(false); }
             if (led1.touched(x, y))   { led1.toggle(); }
@@ -250,6 +269,7 @@ void loop()
             if (led3.touched(x, y))   { led3.toggle(); }
             if (btnReverse.touched(x, y)) { reverseDirection(); }
             if (btnScreenshot.touched(x, y)) {takeScreenshot(); }
+            if (slider.touched(x, y)) { slider.slideTo(x); }
         }
     }
 

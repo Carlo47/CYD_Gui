@@ -6,7 +6,7 @@ void uiButton::draw()
     _lcd.drawRoundRect(_x+2, _y+2, _w, _h, _r, _theme._shadowColor);
     _lcd.drawRoundRect(_x+1, _y+1, _w, _h, _r, _theme._shadowColor);
     _lcd.fillRoundRect(_x, _y, _w, _h, _r, _theme._borderColor);
-    _lcd.fillRoundRect(_x+2, _y+2, _w-4, _h-4, _r, _theme._btnColor);
+    _lcd.fillRoundRect(_x+2, _y+2, _w-4, _h-4, _r, _theme._bodyColor);
     _lcd.setTextDatum(textdatum_t::middle_center);
     _lcd.setTextColor(_theme._textColor);
     _lcd.setFont(_theme._font);
@@ -84,7 +84,7 @@ void uiLED::off()
 {
     if (_isOn)
     {
-        _lcd.fillCircle(_x, _y, _r-2, _theme._btnColor);
+        _lcd.fillCircle(_x, _y, _r-2, _theme._bodyColor);
         _isOn = false;
     }
     _cb(_isOn);
@@ -99,7 +99,7 @@ void uiLED::toggle()
 {
     if (_isOn)
     {
-        _lcd.fillCircle(_x, _y, _r-2, DARKERGREY);
+        _lcd.fillCircle(_x, _y, _r-2, _theme._bodyColor);
         _isOn = false;
     }
     else
@@ -112,5 +112,34 @@ void uiLED::toggle()
 
 bool uiLED::touched(int x, int y)
 {
-    return (x > _x-2*_r && x < _x && y > _y-_r && y < _y+_r);
+    return (x > _x-_r && x < _x+_r && y > _y-_r && y < _y+_r);
+}
+
+
+//--- uiSlider ---
+
+void uiHslider::draw()
+{
+    _lcd.drawRoundRect(_x+2, _y+2, _w, _h, _r, _theme._shadowColor);
+    _lcd.drawRoundRect(_x+1, _y+1, _w, _h, _r, _theme._shadowColor);
+    _lcd.fillRoundRect(_x, _y, _w, _h, _r, _theme._borderColor);
+    _lcd.fillRoundRect(_x+2, _y+2, _w-4, _h-4, _r, _theme._bodyColor);
+    _lcd.fillCircle(_position, _y+_h/2, _h, _color);
+    _lcd.drawCircle(_position, _y+_h/2, _h, _theme._borderColor);
+    _cb(_value);    
+}
+
+
+void uiHslider::slideTo(int x)
+{
+    
+    _lcd.fillCircle(_position, _y+_h/2, _h, _lcd.getBaseColor());
+    _position = x;
+    _value = (_position-_x) * 100 / _w;
+    draw(); 
+}
+
+bool uiHslider::touched(int x, int y)
+{
+    return (x >= _x && x <= _x+_w && y >= _y && y <= _y+_h);
 }
