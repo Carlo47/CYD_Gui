@@ -25,6 +25,7 @@ void UiButton::draw()
     _lcd.setTextDatum(textdatum_t::middle_left);
     _lcd.setTextColor(_theme._textColor, _parent->getPanelColor());
     _lcd.drawString(_label, _x+_w+_d, _y+2+_h/2);
+    
 }
 
 bool UiButton::touched(int x, int y)
@@ -55,8 +56,7 @@ void UiButton::getValue(int &value)
 
 void UiButton::getValue(double &value) 
 { 
-    value = 
-    _value.toDouble(); 
+    value = _value.toDouble(); 
 }
 
 String UiButton::getLabel() 
@@ -117,12 +117,12 @@ void UiButton::updateValue(double value)
 void UiButton::setLabel(String label)
 {
     _label = label;
-    _lcd.drawString(_label, _x+_w+_d, _y+2+_h/2);
+    draw(); //_lcd.drawString(_label, _x+_w+_d, _y+2+_h/2);
 }
 
 void UiButton::clearLabel()
 {
-    _lcd.setTextColor(_lcd.getBaseColor());
+    _lcd.setTextColor(_parent->getPanelColor());
     _lcd.drawString(_label, _x+_w+_d, _y+2+_h/2);
     _lcd.setTextColor(_theme._textColor); 
 }
@@ -168,7 +168,13 @@ bool UiLed::touched(int x, int y)
 
 void UiLed::setLabel(String txt)
 {
-    _label = txt;     
+    _label = txt;
+    draw();     
+}
+
+bool UiLed::isOn()
+{
+    return _isOn;
 }
 
 void UiLed::on()
@@ -226,14 +232,16 @@ void UiHslider::slideToPosition(int x)
     if (rangeIsInteger())
     {
         int v = map(_position-_x, 0, _w-2*_r, _minInt, _maxInt);
-        getValueField()->updateValue(v);
+        if (_pValueField) getValueField()->updateValue(v);
         //log_i("Int x=%d, _w=%d, v=%d, min=%d, max=%d", x, _w, v, _minInt, _maxInt);
+        _value = String(v);
     }
     else
     {
         double v = fmap(_position-_x, 0.0, _w-2*_r, _minDouble, _maxDouble);
-        getValueField()->updateValue(v);
+        if (_pValueField) getValueField()->updateValue(v);
         //log_i("Double x=%d, w=%d, v=%.10g, min=%.10g, max=%.10g", x, _w, v, _minDouble, _maxDouble);
+        _value = String(v);
     }
     
     draw(); 
@@ -243,7 +251,7 @@ void UiHslider::slideToValue(int v)
 {
     _lcd.fillCircle(_position, _y+_h/2, _h, _parent->getPanelColor());
     _position = map(v, _minInt, _maxInt, 0, _w-2*_r) + _x;
-    _pValueField->updateValue(v);
+    if (_pValueField) _pValueField->updateValue(v);
     _value = String(v);
     draw(); 
 }
@@ -254,7 +262,7 @@ void UiHslider::slideToValue(double v)
     _position = fmap(v, _minDouble, _maxDouble, 0, _w) + _x;
     char buf[24];
     snprintf(buf,sizeof(buf), "%.4g", v);
-    _pValueField->updateValue(buf);
+    if (_pValueField) _pValueField->updateValue(buf);
     _value = buf;
     draw(); 
 }
@@ -273,7 +281,7 @@ bool UiHslider::hasValueField()
 
 UiButton *UiHslider::getValueField() 
 { 
-    return _pValueField; 
+    return _pValueField ? _pValueField : nullptr; 
 }
 
 void UiHslider::setRange(int min, int max)
@@ -420,6 +428,7 @@ void UiKeypad::handleKeys(int x, int y)
                 } 
                        
                 hide();
+                _okCallback(_targetValueField);
                 UiPanel::redrawPanels(); // Called to restore underlying panels
                 return;                
             }
@@ -430,5 +439,10 @@ void UiKeypad::handleKeys(int x, int y)
 void UiKeypad::addValueField(UiButton *btn) 
 {
     _targetValueField = btn;
+}
+
+void UiKeypad::addOkCallback(Callback cb)
+{
+    _okCallback = cb;
 }
 // --- UiKeypad ---
