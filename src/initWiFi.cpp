@@ -3,7 +3,7 @@
 
 // WiFi credentials 
 const char ssid[]     = "Your SSID";
-const char password[] = "Your password";
+const char password[] = "Your Password";
 const char NTP_SERVER_POOL[] = "ch.pool.ntp.org";
 const char TIME_ZONE[]       = "MEZ-1MESZ-2,M3.5.0/02:00:00,M10.5.0/03:00:00";
 const char HOST_NAME[]       = "ESP32-CYD"; 

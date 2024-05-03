@@ -7,8 +7,12 @@
 
 #define DARKERGREY 0x3166
 
+
 //Forward declaration
 class UiKeypad;
+class UiButton;
+
+using Callback = void(*)(UiButton *);
 
 class UiTheme
 {
@@ -157,6 +161,7 @@ class UiLed : public UiButton
         void draw();
         bool touched(int x, int y);
         void setLabel(String txt);
+        bool isOn();
         void on();
         void off();
         void toggle();
@@ -214,6 +219,7 @@ class UiKeypad : public UiPanel
         void show();
         void handleKeys(int x, int y);
         void addValueField(UiButton *btn);
+        void addOkCallback(Callback cb);
 
     private:
         int __x = _x + _gap; // origin x of the top left button (screen coords)
@@ -228,6 +234,7 @@ class UiKeypad : public UiPanel
         static const int _hp   = _rows*(_hb+_gap) + _gap; // height of the underlying panel
 
         UiButton *_targetValueField;
+        Callback _okCallback = nullptr;
 
         UiButton *_btnEntry = new UiButton(this, __x, __y, (_wb + _gap)*_cols - _gap, _hb, "");
         UiButton *_btn1     = new UiButton(this, __x,               __y+(_hb+_gap), _wb, _hb, "1");
