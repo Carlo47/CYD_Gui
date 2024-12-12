@@ -1,7 +1,7 @@
 /**
  * Program      CYD_Gui for the ESP32_2432S028R aka "Cheap Yellow Display (CYD)"
  * 
- * Author       2024-04-17 Charles Geiser
+ * Author       2024-12-12 Charles Geiser
  * 
  * Purpose      Shows how to implement some graphical user interface components
  *                  UiPanel   the container for the gui components
@@ -32,31 +32,41 @@
 #pragma GCC optimize ("Ofast")
 #include <Arduino.h>
 #include <SD.h>
+#include <Preferences.h>
+#include <ESPAsyncWebServer.h>
+#include "ESP32AutoConnect.h"
 #include "lgfx_ESP32_2432S028.h"
 #include "UiComponents.h"
 #include "PulseGen.h"
 #include "Wait.h"
 
 using Action = void(&)(LGFX &lcd);
-enum Rotation {PORTRAIT, LANDSCAPE};
-
+enum class ROTATION { LANDSCAPE_USB_RIGHT, PORTRAIT_USB_UP, 
+                      LANDSCAPE_USB_LEFT,  PORTRAIT_USB_DOWN };
+const char hostname[] = "cyd-gui";
+AsyncWebServer server(80);
+Preferences prefs;
 LGFX lcd;
 GFXfont myFont = fonts::DejaVu18;
 //SPIClass sdcardSPI(VSPI); // uncomment this line to take screenshots
 
 extern void nop(LGFX &lcd);
 extern void initDisplay(LGFX &lcd, uint8_t rotation=0, lgfx::v1::GFXfont *theFont=&myFont, Action greet=nop);
-extern void initNTP();
-extern void initWiFi();
+extern void initESP32AutoConnect(AsyncWebServer &webServer, Preferences &prefs, const char hostname[]);
+extern void initPrefs();
+extern void initRTC(const char *timeZone, bool disconnect = false);
 extern void initSDCard(SPIClass &spi);
-extern void lcdInfo(LGFX &lcd);
+extern bool getMappedTouch(LGFX &lcd, int &x, int &y);
 extern void listFiles(File dir, int indent=0);
 extern void printConnectionDetails();
 extern void printDateTime(int format);
 extern void printNearbyNetworks();
 extern void printSDCardInfo();
+extern void printPrefs();
 extern bool saveBmpToSD_16bit(LGFX &lcd, const char *filename);
 extern bool saveBmpToSD_24bit(LGFX &lcd, const char *filename);
+
+extern const char *MEZ_MESZ;
 
 
 /**
@@ -236,7 +246,7 @@ Wait waitCdsLdr(2500);    // Read CDS LDR all 2.5 seconds
  *    registered with the keypad and this is then displayed.
  *  - If the slider is tapped or moved, the corresponding value is 
  *    displayed in the value field.
- * The order of the buttons, i.e. value filed and slider,  is determined by
+ * The order of the buttons, i.e. value field and slider,  is determined by
  * their definition in the std::vector<UiButtons *> of the associated panel. 
 */
 void UiPanel1::handleKeys(int x, int y)
@@ -411,6 +421,16 @@ void takeScreenshot()
 }
 
 
+/**
+ * Called when OK button of keypad is clicked 
+ */
+void handleOkButton(UiButton* btn)
+{
+    String e = btn->getValue();
+    double v = e.toDouble();
+    log_i("Keypad OK button clicked, entered value = %5.3f", v);
+}
+
 void setup() 
 {
   Serial.begin(115200);
@@ -422,23 +442,22 @@ void setup()
     // Starts the blinking task, which causes the RGB LED to flash 
     // red, green and blue alternately every second
     xTaskCreate(blinkTask, "blinkTask", 1024, NULL, 10, NULL);
-
-    initWiFi();
+    initESP32AutoConnect(server, prefs, hostname);
     printConnectionDetails();
     printNearbyNetworks();
 
-    initNTP();
+    initRTC(MEZ_MESZ);
     printDateTime(5);
 
     lcd.setBaseColor(DARKERGREY);
-    initDisplay(lcd, Rotation::PORTRAIT, &myFont, lcdInfo);
+    initDisplay(lcd, static_cast<uint8_t>(ROTATION::PORTRAIT_USB_UP));
   
     //initSDCard(sdcardSPI);      // Init SD card to take screenshots
     printSDCardInfo();          // Print SD card details 
     listFiles(SD.open("/"));    // List the files on SD card 
 
     // Create the panels and showm them ( argument hidden is set to false)
-    panel1 = new UiPanel1(lcd, 0,                0, lcd.width(),   lcd.height()/3, TFT_OLIVE,  false);
+    panel1 = new UiPanel1(lcd, 0,                 0, lcd.width(),  lcd.height()/3, TFT_OLIVE,  false);
     panel2 = new UiPanel2(lcd, 0,     lcd.height()/3, lcd.width(), lcd.height()/3, TFT_GREEN,  false);
     panel3 = new UiPanel3(lcd, 0,   2*lcd.height()/3, 145,         lcd.height()/3, TFT_SKYBLUE,false);
     panel4 = new UiPanel4(lcd, 145, 2*lcd.height()/3,  95,         lcd.height()/3, TFT_ORANGE, false);
@@ -448,6 +467,7 @@ void setup()
 
     // Add a keypad to panel 1
     panel1->addKeypad(&keypad);
+    keypad.addOkCallback(handleOkButton);
 
     lcd.setBrightness(255);
     waitDateTime.begin();
@@ -459,7 +479,7 @@ void setup()
 void loop() 
 {
     int x, y;
-    if (waitUserInput.isOver() && lcd.getTouch(&x, &y))
+    if (waitUserInput.isOver() && getMappedTouch(lcd, x, y))
     {
         //log_i("Key pressed at %3d, %3d\n", x, y);
         if (!panel1->isHidden()) panel1->handleKeys(x, y);
@@ -472,10 +492,11 @@ void loop()
     if (!panel3->isHidden() && waitDateTime.isOver()) panel3->updateDateTime();
 
     // To take automatically screenshots uncomment the following lines
-    // and also line 45 and 436
-/*  delay(2000); takeScreenshot();
+    // and also line 51 and 453. But when the SD card is activatet, the
+    // touchpad is no longer funtioning.
+/*     delay(2000); takeScreenshot();
     delay(2000); keypad.show();
     delay(2000); takeScreenshot(); 
-    delay(2000); keypad.hide(); UiPanel::redrawPanels();
- */
+    delay(2000); keypad.hide(); UiPanel::redrawPanels(); */
+
 }

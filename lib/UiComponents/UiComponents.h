@@ -233,7 +233,7 @@ class UiKeypad : public UiPanel
         static const int _wp   = _cols*(_wb+_gap) + _gap; // width of the underlying panel
         static const int _hp   = _rows*(_hb+_gap) + _gap; // height of the underlying panel
 
-        UiButton *_targetValueField;
+        UiButton *_targetValueField = nullptr;
         Callback _okCallback = nullptr;
 
         UiButton *_btnEntry = new UiButton(this, __x, __y, (_wb + _gap)*_cols - _gap, _hb, "");

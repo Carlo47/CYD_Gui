@@ -428,7 +428,7 @@ void UiKeypad::handleKeys(int x, int y)
                 } 
                        
                 hide();
-                _okCallback(_targetValueField);
+                if (_okCallback != nullptr) _okCallback(_targetValueField);
                 UiPanel::redrawPanels(); // Called to restore underlying panels
                 return;                
             }
